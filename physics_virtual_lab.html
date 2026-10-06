@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Virtual Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for real-time diagnostics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        lab: {
+                            darkBg: '#0f172a',
+                            darkPanel: '#1e293b',
+                            darkBorder: '#334155',
+                            lightBg: '#f8fafc',
+                            lightPanel: '#ffffff',
+                            lightBorder: '#e2e8f0',
+                            accent: '#3b82f6',
+                            accentGlow: '#60a5fa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .mono-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Glassmorphism styles */
+        .glass-panel-dark {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-panel-light {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Range Slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 3px;
+            background: rgba(156, 163, 175, 0.3);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+            transition: all 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Canvas Overlay styles */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-lab-lightBg dark:bg-lab-darkBg text-slate-800 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 border-b border-lab-lightBorder dark:border-lab-darkBorder bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 lg:px-6">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                <i class="fa-solid font-bold text-xl fa-atom"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-300">PhysiLab 3D Dynamic</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Interactive Physics Virtual Laboratory</p>
+            </div>
+        </div>
+
+        <!-- Tab Selector - Desktop -->
+        <nav class="hidden lg:flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-sm font-medium">
+            <button onclick="switchTab('projectile')" id="tab-projectile" class="nav-tab px-4 py-2 rounded-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-person-skiing-nordic"></i><span>2D Projectile</span>
+            </button>
+            <button onclick="switchTab('electro')" id="tab-electro" class="nav-tab px-4 py-2 rounded-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-bolt"></i><span>Electrostatics</span>
+            </button>
+            <button onclick="switchTab('magnet')" id="tab-magnet" class="nav-tab px-4 py-2 rounded-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-magnet"></i><span>Magnetism</span>
+            </button>
+            <button onclick="switchTab('shm')" id="tab-shm" class="nav-tab px-4 py-2 rounded-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-wave-square"></i><span>SHM</span>
+            </button>
+            <button onclick="switchTab('gravity')" id="tab-gravity" class="nav-tab px-4 py-2 rounded-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-globe"></i><span>Gravitation</span>
+            </button>
+        </nav>
+
+        <!-- Right Side Utility Controls -->
+        <div class="flex items-center space-x-3">
+            <!-- Mobile Navigation Dropdown -->
+            <select id="mobile-tab-select" onchange="switchTab(this.value)" class="lg:hidden bg-slate-100 dark:bg-slate-800 border-none text-sm font-medium rounded-lg px-3 py-2 text-slate-800 dark:text-slate-200">
+                <option value="projectile">2D Projectile</option>
+                <option value="electro">Electrostatics</option>
+                <option value="magnet">Magnetism</option>
+                <option value="shm">SHM / Pendulum</option>
+                <option value="gravity">Gravitation</option>
+            </select>
+
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+                <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+            
+            <button onclick="toggleTheoryDrawer()" class="px-3 py-2 text-sm rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center space-x-2 font-medium">
+                <i class="fa-solid fa-book"></i>
+                <span class="hidden sm:inline">Theory & Formulas</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Left Sidebar - Control Panel -->
+        <aside class="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-lab-lightBorder dark:border-lab-darkBorder bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg flex flex-col h-auto lg:h-full z-20 overflow-y-auto">
+            
+            <!-- Global Simulation Controls -->
+            <div class="p-4 border-b border-lab-lightBorder dark:border-lab-darkBorder space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Global Controls</span>
+                    <span id="fps-counter" class="text-xs mono-text text-green-500 font-medium">60 FPS</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="btn-play" onclick="togglePlayPause()" class="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium flex items-center justify-center space-x-2 transition shadow-md shadow-blue-500/20">
+                        <i id="play-icon" class="fa-solid fa-pause"></i><span id="play-text">Pause</span>
+                    </button>
+                    <button onclick="stepSimulation()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition active:scale-95">
+                        <i class="fa-solid fa-step-forward"></i>
+                    </button>
+                    <button onclick="resetCurrentTab()" class="p-2.5 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition active:scale-95">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <!-- Simulation Speed Slider -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500 dark:text-slate-400">Simulation Speed</span>
+                        <span id="speed-val" class="mono-text font-medium">1.0x</span>
+                    </div>
+                    <input type="range" id="sim-speed" min="0.1" max="3.0" step="0.1" value="1.0" oninput="updateSimSpeed(this.value)" class="w-full">
+                </div>
+            </div>
+
+            <!-- Dynamic Tab Controls Container -->
+            <div id="controls-container" class="p-4 flex-1 space-y-6">
+                <!-- Injected via JS based on active lab tab -->
+            </div>
+        </aside>
+
+        <!-- Right / Central - Interactive Canvas Section -->
+        <main class="flex-1 relative bg-slate-100 dark:bg-slate-950 flex flex-col overflow-hidden">
+            
+            <!-- Canvas HUD Overlay (Top Right) -->
+            <div class="absolute top-4 right-4 z-10 flex flex-col space-y-2 pointer-events-none">
+                <div id="hud-panel" class="glass-panel-light dark:glass-panel-dark rounded-2xl p-4 shadow-xl border text-xs space-y-2 min-w-[200px] pointer-events-auto">
+                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">
+                        <span class="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider text-[10px]">Real-Time Diagnostics</span>
+                        <span id="hud-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    </div>
+                    <div id="hud-metrics" class="space-y-1.5 mono-text text-slate-600 dark:text-slate-300">
+                        <!-- Dynamic HUD Items populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Visualization Toggles Bar (Bottom Right overlay) -->
+            <div class="absolute bottom-4 right-4 z-10 glass-panel-light dark:glass-panel-dark rounded-xl p-2 shadow-lg border flex items-center space-x-2 text-xs">
+                <button onclick="toggleVisualSetting('vectors')" id="toggle-vectors" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-medium transition bg-blue-500 text-white">Vectors</button>
+                <button onclick="toggleVisualSetting('grid')" id="toggle-grid" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-medium transition bg-blue-500 text-white">Grid</button>
+                <button onclick="toggleVisualSetting('trail')" id="toggle-trail" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-medium transition bg-blue-500 text-white">Trails</button>
+            </div>
+
+            <!-- Main Interactive Canvas -->
+            <div class="canvas-container flex-1 bg-white dark:bg-slate-950">
+                <canvas id="lab-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+            </div>
+
+            <!-- Optional Real-time Graph Drawer (For SHM / Projectile) -->
+            <div id="graph-panel" class="h-44 border-t border-lab-lightBorder dark:border-lab-darkBorder bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-2 hidden relative">
+                <div class="flex justify-between items-center px-2 mb-1">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Live Dynamic Chart</span>
+                    <button onclick="toggleGraphPanel(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="w-full h-32">
+                    <canvas id="chart-canvas"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Theory / Formulas Drawer (Slide-Over) -->
+    <div id="theory-drawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 border-l border-slate-200 dark:border-slate-800 flex flex-col">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h2 class="font-bold text-lg flex items-center space-x-2">
+                <i class="fa-solid fa-graduation-cap text-blue-500"></i>
+                <span id="theory-title">Physics Theory & Formulas</span>
+            </h2>
+            <button onclick="toggleTheoryDrawer()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <div id="theory-content" class="p-6 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600 dark:text-slate-300">
+            <!-- Injected dynamically per module -->
+        </div>
+    </div>
+
+    <script>
+        /*
+         *  PHYSICS VIRTUAL LAB ENGINE
+         *  Clean Single Engine Loop with Switching Modules
+         */
+
+        // App State
+        const state = {
+            theme: 'dark',
+            activeTab: 'projectile',
+            isRunning: true,
+            simSpeed: 1.0,
+            visuals: {
+                vectors: true,
+                grid: true,
+                trail: true
+            },
+            fps: 60,
+            frameCount: 0,
+            lastFpsUpdate: performance.now(),
+            timeStep: 0.016, // Default frame delta in seconds
+            canvas: null,
+            ctx: null,
+            width: 0,
+            height: 0,
+            chart: null,
+            isGraphOpen: false
+        };
+
+        // Module Specific States
+        const labModules = {
+            // -------------------------------------------------------------
+            // 1. PROJECTILE MOTION
+            // -------------------------------------------------------------
+            projectile: {
+                title: "2D Projectile Motion",
+                params: {
+                    v0: 35,          // m/s
+                    angle: 45,       // deg
+                    gravity: 9.81,   // m/s^2
+                    height: 0,       // initial launch height (m)
+                    targetX: 100,    // Target position (m)
+                    showTarget: true
+                },
+                // Simulation Dynamic State
+                pos: { x: 0, y: 0 },
+                vel: { x: 0, y: 0 },
+                time: 0,
+                trail: [],
+                maxHeightReached: 0,
+                totalDistance: 0,
+                landingTime: 0,
+                isLanded: false,
+
+                init() {
+                    const rad = (this.params.angle * Math.PI) / 180;
+                    this.pos = { x: 0, y: this.params.height };
+                    this.vel = {
+                        x: this.params.v0 * Math.cos(rad),
+                        y: this.params.v0 * Math.sin(rad)
+                    };
+                    this.time = 0;
+                    this.trail = [{ ...this.pos }];
+                    this.maxHeightReached = this.params.height;
+                    this.totalDistance = 0;
+                    this.landingTime = 0;
+                    this.isLanded = false;
+                },
+
+                update(dt) {
+                    if (this.isLanded) return;
+
+                    this.time += dt;
+                    this.vel.y -= this.params.gravity * dt;
+                    this.pos.x += this.vel.x * dt;
+                    this.pos.y += this.vel.y * dt;
+
+                    if (this.pos.y > this.maxHeightReached) {
+                        this.maxHeightReached = this.pos.y;
+                    }
+
+                    // Check Landing
+                    if (this.pos.y <= 0) {
+                        this.pos.y = 0;
+                        this.isLanded = true;
+                        this.landingTime = this.time;
+                        this.totalDistance = this.pos.x;
+                    }
+
+                    // Append Trail
+                    if (state.visuals.trail && Math.random() > 0.3) {
+                        this.trail.push({ ...this.pos });
+                    }
+                },
+
+                render(ctx, w, h) {
+                    // Coordinate system scaling: 1 meter = scale pixels
+                    const scale = Math.min(w, h) / 140; 
+                    const originX = 60;
+                    const originY = h - 60;
+
+                    // Draw Target if Enabled
+                    if (this.params.showTarget) {
+                        const tx = originX + this.params.targetX * scale;
+                        const ty = originY;
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath();
+                        ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(tx, ty, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath();
+                        ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Trajectory Line
+                    if (this.trail.length > 1) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = state.theme === 'dark' ? 'rgba(96, 165, 250, 0.8)' : 'rgba(37, 99, 235, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 5]);
+                        ctx.moveTo(originX + this.trail[0].x * scale, originY - this.trail[0].y * scale);
+                        for (let i = 1; i < this.trail.length; i++) {
+                            ctx.lineTo(originX + this.trail[i].x * scale, originY - this.trail[i].y * scale);
+                        }
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+
+                    // Draw Projectile Body
+                    const px = originX + this.pos.x * scale;
+                    const py = originY - this.pos.y * scale;
+
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.shadowColor = '#3b82f6';
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Draw Vectors if active
+                    if (state.visuals.vectors && !this.isLanded) {
+                        // Velocity Vector (Green)
+                        drawArrow(ctx, px, py, px + this.vel.x * 1.2, py - this.vel.y * 1.2, '#22c55e', 3, 'V');
+                        // Gravity/Force Vector (Red)
+                        drawArrow(ctx, px, py, px, py + this.params.gravity * 2, '#ef4444', 3, 'g');
+                    }
+                },
+
+                getControlsHTML() {
+                    return `
+                        <div class="space-y-4">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-500"></i><span>Launch Settings</span>
+                            </h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Initial Velocity (v₀)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.v0} m/s</span>
+                                </div>
+                                <input type="range" min="5" max="80" value="${this.params.v0}" oninput="labModules.projectile.params.v0 = +this.value; labModules.projectile.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Launch Angle (θ)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.angle}°</span>
+                                </div>
+                                <input type="range" min="0" max="90" value="${this.params.angle}" oninput="labModules.projectile.params.angle = +this.value; labModules.projectile.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Launch Height (h)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.height} m</span>
+                                </div>
+                                <input type="range" min="0" max="40" value="${this.params.height}" oninput="labModules.projectile.params.height = +this.value; labModules.projectile.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Gravity Acceleration (g)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.gravity} m/s²</span>
+                                </div>
+                                <input type="range" min="1" max="25" step="0.1" value="${this.params.gravity}" oninput="labModules.projectile.params.gravity = +this.value; labModules.projectile.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Target Distance</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.targetX} m</span>
+                                </div>
+                                <input type="range" min="20" max="250" value="${this.params.targetX}" oninput="labModules.projectile.params.targetX = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                        </div>
+                    `;
+                },
+
+                getHUDHTML() {
+                    const currentVel = Math.sqrt(this.vel.x**2 + this.vel.y**2).toFixed(1);
+                    return `
+                        <div>Time: <span class="text-blue-500 font-bold">${this.time.toFixed(2)} s</span></div>
+                        <div>Distance (X): <span class="text-blue-500 font-bold">${this.pos.x.toFixed(1)} m</span></div>
+                        <div>Altitude (Y): <span class="text-blue-500 font-bold">${this.pos.y.toFixed(1)} m</span></div>
+                        <div>Velocity: <span class="text-green-500 font-bold">${currentVel} m/s</span></div>
+                        <div class="pt-2 border-t border-slate-200 dark:border-slate-700">Max Height: <span class="text-indigo-400 font-bold">${this.maxHeightReached.toFixed(1)} m</span></div>
+                    `;
+                },
+
+                getTheoryHTML() {
+                    return `
+                        <h3 class="font-bold text-base text-blue-500 mb-2">2D Projectile Trajectory Dynamics</h3>
+                        <p class="mb-3">A projectile moves in two dimensions under constant gravitational acceleration $g$.</p>
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg font-mono text-xs space-y-1 mb-4">
+                            <div>x(t) = v₀ · cos(θ) · t</div>
+                            <div>y(t) = h + v₀ · sin(θ) · t - ½g·t²</div>
+                            <div>Range R = (v₀² / g) · sin(2θ)</div>
+                            <div>Max Height H = h + (v₀² · sin²(θ)) / (2g)</div>
+                        </div>
+                    `;
+                }
+            },
+
+            // -------------------------------------------------------------
+            // 2. ELECTROSTATICS
+            // -------------------------------------------------------------
+            electro: {
+                title: "Electrostatics Lab",
+                params: {
+                    showEquipotentials: true,
+                    fieldDensity: 16
+                },
+                charges: [
+                    { id: 1, x: -150, y: 0, q: 5, isDragging: false },
+                    { id: 2, x: 150, y: 0, q: -5, isDragging: false }
+                ],
+                activeDragIndex: -1,
+
+                init() {
+                    // Charges are positioned relative to canvas center
+                },
+
+                update(dt) {
+                    // Static field setup or mobile charges
+                },
+
+                render(ctx, w, h) {
+                    const cx = w / 2;
+                    const cy = h / 2;
+
+                    // 1. Draw Equipotential Curves
+                    if (this.params.showEquipotentials) {
+                        const gridStep = 25;
+                        for (let x = -w/2; x < w/2; x += gridStep) {
+                            for (let y = -h/2; y < h/2; y += gridStep) {
+                                let potential = 0;
+                                this.charges.forEach(c => {
+                                    const r = Math.hypot(x - c.x, y - c.y) + 1;
+                                    potential += (c.q * 1000) / r;
+                                });
+                                const alpha = Math.min(Math.abs(potential) * 0.02, 0.3);
+                                ctx.fillStyle = potential > 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(59, 130, 246, ${alpha})`;
+                                ctx.fillRect(cx + x - gridStep/2, cy + y - gridStep/2, gridStep, gridStep);
+                            }
+                        }
+                    }
+
+                    // 2. Draw Electric Field Vectors Grid
+                    if (state.visuals.vectors) {
+                        const step = 40;
+                        for (let x = -w/2 + 20; x < w/2; x += step) {
+                            for (let y = -h/2 + 20; y < h/2; y += step) {
+                                let Ex = 0;
+                                let Ey = 0;
+                                this.charges.forEach(c => {
+                                    const dx = x - c.x;
+                                    const dy = y - c.y;
+                                    const r2 = dx*dx + dy*dy + 100;
+                                    const r = Math.sqrt(r2);
+                                    const E = (c.q * 5000) / r2;
+                                    Ex += E * (dx / r);
+                                    Ey += E * (dy / r);
+                                });
+
+                                const emag = Math.hypot(Ex, Ey);
+                                if (emag > 0.1) {
+                                    const len = Math.min(emag, 18);
+                                    const angle = Math.atan2(Ey, Ex);
+                                    const px = cx + x;
+                                    const py = cy + y;
+                                    ctx.strokeStyle = state.theme === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+                                    ctx.lineWidth = 1.5;
+                                    ctx.beginPath();
+                                    ctx.moveTo(px, py);
+                                    ctx.lineTo(px + Math.cos(angle)*len, py + Math.sin(angle)*len);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Draw Coulomb Force Arrow between Charges
+                    if (this.charges.length === 2) {
+                        const c1 = this.charges[0];
+                        const c2 = this.charges[1];
+                        const dx = c2.x - c1.x;
+                        const dy = c2.y - c1.y;
+                        const dist = Math.hypot(dx, dy);
+                        const isAttract = (c1.q * c2.q) < 0;
+                        const forceColor = isAttract ? '#3b82f6' : '#ef4444';
+
+                        // Force vector on charge 1
+                        const angle = Math.atan2(dy, dx);
+                        const dir = isAttract ? 1 : -1;
+                        drawArrow(ctx, cx + c1.x, cy + c1.y, cx + c1.x + Math.cos(angle)*40*dir, cy + c1.y + Math.sin(angle)*40*dir, forceColor, 3, 'F₁₂');
+                        drawArrow(ctx, cx + c2.x, cy + c2.y, cx + c2.x - Math.cos(angle)*40*dir, cy + c2.y - Math.sin(angle)*40*dir, forceColor, 3, 'F₂₁');
+                    }
+
+                    // 4. Draw Charges
+                    this.charges.forEach((c, idx) => {
+                        const px = cx + c.x;
+                        const py = cy + c.y;
+                        ctx.fillStyle = c.q > 0 ? '#ef4444' : '#3b82f6';
+                        ctx.shadowColor = c.q > 0 ? '#ef4444' : '#3b82f6';
+                        ctx.shadowBlur = 15;
+                        ctx.beginPath();
+                        ctx.arc(px, py, 18, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        // Plus or Minus Sign
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 16px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(c.q > 0 ? `+${c.q}μC` : `${c.q}μC`, px, py);
+                    });
+                },
+
+                handleMouseDown(e, w, h) {
+                    const cx = w / 2;
+                    const cy = h / 2;
+                    const mx = e.offsetX - cx;
+                    const my = e.offsetY - cy;
+
+                    this.charges.forEach((c, idx) => {
+                        if (Math.hypot(mx - c.x, my - c.y) < 25) {
+                            c.isDragging = true;
+                            this.activeDragIndex = idx;
+                        }
+                    });
+                },
+
+                handleMouseMove(e, w, h) {
+                    if (this.activeDragIndex !== -1) {
+                        const cx = w / 2;
+                        const cy = h / 2;
+                        this.charges[this.activeDragIndex].x = e.offsetX - cx;
+                        this.charges[this.activeDragIndex].y = e.offsetY - cy;
+                    }
+                },
+
+                handleMouseUp() {
+                    if (this.activeDragIndex !== -1) {
+                        this.charges[this.activeDragIndex].isDragging = false;
+                        this.activeDragIndex = -1;
+                    }
+                },
+
+                getControlsHTML() {
+                    return `
+                        <div class="space-y-4">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-500"></i><span>Charge Magnitude</span>
+                            </h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Charge 1 (q₁)</span>
+                                    <span class="mono-text font-bold text-red-500">${this.charges[0].q} μC</span>
+                                </div>
+                                <input type="range" min="-10" max="10" step="1" value="${this.charges[0].q}" oninput="labModules.electro.charges[0].q = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Charge 2 (q₂)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.charges[1].q} μC</span>
+                                </div>
+                                <input type="range" min="-10" max="10" step="1" value="${this.charges[1].q}" oninput="labModules.electro.charges[1].q = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                                <label class="flex items-center space-x-2 text-xs font-medium cursor-pointer">
+                                    <input type="checkbox" ${this.params.showEquipotentials ? 'checked' : ''} onchange="labModules.electro.params.showEquipotentials = this.checked;" class="rounded text-blue-600">
+                                    <span>Show Equipotential Regions</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-slate-400 italic"><i class="fa-solid fa-hand-pointer mr-1"></i>Tip: Click & drag charges directly on the canvas to move them!</p>
+                        </div>
+                    `;
+                },
+
+                getHUDHTML() {
+                    const c1 = this.charges[0];
+                    const c2 = this.charges[1];
+                    const r = (Math.hypot(c2.x - c1.x, c2.y - c1.y) / 20).toFixed(2); // relative scale
+                    const k = 8.987; // N m^2 / C^2 relative factor
+                    const force = ((k * Math.abs(c1.q * c2.q)) / (r*r + 0.1)).toFixed(2);
+                    return `
+                        <div>Charge Distance (r): <span class="text-blue-500 font-bold">${r} m</span></div>
+                        <div>Coulomb Force (F): <span class="text-indigo-400 font-bold">${force} N</span></div>
+                        <div>Interaction: <span class="font-bold ${(c1.q*c2.q)<0 ? 'text-blue-500':'text-red-500'}">${(c1.q*c2.q)<0 ? 'Attraction' : 'Repulsion'}</span></div>
+                    `;
+                },
+
+                getTheoryHTML() {
+                    return `
+                        <h3 class="font-bold text-base text-blue-500 mb-2">Electrostatics & Coulomb's Law</h3>
+                        <p class="mb-3">Coulomb's Law quantifies the electric force between two stationary point charges.</p>
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg font-mono text-xs space-y-1 mb-4">
+                            <div>F = k_e · (|q₁ · q₂| / r²)</div>
+                            <div>k_e = 8.9875 × 10⁹ N·m²/C²</div>
+                            <div>E = F / q = k_e · (q / r²)</div>
+                        </div>
+                    `;
+                }
+            },
+
+            // -------------------------------------------------------------
+            // 3. MAGNETISM / LORENTZ FORCE
+            // -------------------------------------------------------------
+            magnet: {
+                title: "Magnetism & Lorentz Force",
+                params: {
+                    q: 1,           // Charge (+1 or -1)
+                    v: 40,          // Speed
+                    B: 1.5,         // Magnetic Field strength (-into screen, +out of screen)
+                    angle: 90       // Field Angle (90 = perpendicular circular, <90 helix)
+                },
+                pos: { x: 0, y: 0, z: 0 },
+                vel: { x: 0, y: 0, z: 0 },
+                trail: [],
+
+                init() {
+                    this.pos = { x: -120, y: 0, z: 0 };
+                    const rad = (this.params.angle * Math.PI) / 180;
+                    this.vel = {
+                        x: this.params.v * Math.sin(rad),
+                        y: 0,
+                        z: this.params.v * Math.cos(rad)
+                    };
+                    this.trail = [];
+                },
+
+                update(dt) {
+                    // Lorentz force: F = q * (v x B)
+                    // Assuming B field points along Z axis (into page if B > 0)
+                    const q = this.params.q;
+                    const B = this.params.B;
+
+                    // Acceleration components from cross product
+                    const ax = q * this.vel.y * B;
+                    const ay = -q * this.vel.x * B;
+
+                    this.vel.x += ax * dt;
+                    this.vel.y += ay * dt;
+
+                    this.pos.x += this.vel.x * dt;
+                    this.pos.y += this.vel.y * dt;
+                    this.pos.z += this.vel.z * dt;
+
+                    if (state.visuals.trail && Math.random() > 0.2) {
+                        this.trail.push({ ...this.pos });
+                        if (this.trail.length > 300) this.trail.shift();
+                    }
+                },
+
+                render(ctx, w, h) {
+                    const cx = w / 2;
+                    const cy = h / 2;
+
+                    // Draw Magnetic Field Vectors Background (Crosses for into screen)
+                    ctx.strokeStyle = state.theme === 'dark' ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)';
+                    ctx.lineWidth = 1.5;
+                    const gridStep = 45;
+                    for (let x = -w/2 + 30; x < w/2; x += gridStep) {
+                        for (let y = -h/2 + 30; y < h/2; y += gridStep) {
+                            const px = cx + x;
+                            const py = cy + y;
+                            if (this.params.B >= 0) {
+                                // Cross (Into Page)
+                                ctx.beginPath();
+                                ctx.moveTo(px - 5, py - 5); ctx.lineTo(px + 5, py + 5);
+                                ctx.moveTo(px + 5, py - 5); ctx.lineTo(px - 5, py + 5);
+                                ctx.stroke();
+                            } else {
+                                // Dot (Out of Page)
+                                ctx.beginPath();
+                                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    // Draw Path Trail
+                    if (this.trail.length > 1) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#a855f7';
+                        ctx.lineWidth = 2.5;
+                        ctx.moveTo(cx + this.trail[0].x, cy + this.trail[0].y);
+                        for (let i = 1; i < this.trail.length; i++) {
+                            ctx.lineTo(cx + this.trail[i].x, cy + this.trail[i].y);
+                        }
+                        ctx.stroke();
+                    }
+
+                    // Particle position
+                    const px = cx + this.pos.x;
+                    const py = cy + this.pos.y;
+
+                    ctx.fillStyle = this.params.q > 0 ? '#ef4444' : '#3b82f6';
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Force and Velocity Vectors
+                    if (state.visuals.vectors) {
+                        // Velocity Vector (Green)
+                        drawArrow(ctx, px, py, px + this.vel.x * 0.8, py + this.vel.y * 0.8, '#22c55e', 2.5, 'v');
+
+                        // Lorentz Force Vector (Amber)
+                        const Fx = this.params.q * this.vel.y * this.params.B;
+                        const Fy = -this.params.q * this.vel.x * this.params.B;
+                        drawArrow(ctx, px, py, px + Fx * 0.8, py + Fy * 0.8, '#f59e0b', 2.5, 'F_B');
+                    }
+                },
+
+                getControlsHTML() {
+                    return `
+                        <div class="space-y-4">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-500"></i><span>Magnetic Parameters</span>
+                            </h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Magnetic Field B (Tesla)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.B} T</span>
+                                </div>
+                                <input type="range" min="-3" max="3" step="0.2" value="${this.params.B}" oninput="labModules.magnet.params.B = +this.value; labModules.magnet.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Particle Speed (v)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.v} m/s</span>
+                                </div>
+                                <input type="range" min="10" max="80" value="${this.params.v}" oninput="labModules.magnet.params.v = +this.value; labModules.magnet.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Particle Charge Sign</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.q > 0 ? '+1 C' : '-1 C'}</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="labModules.magnet.params.q = 1; labModules.magnet.init(); updateControlsUI();" class="flex-1 py-1.5 rounded-lg text-xs font-semibold ${this.params.q > 0 ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}">+ Positive</button>
+                                    <button onclick="labModules.magnet.params.q = -1; labModules.magnet.init(); updateControlsUI();" class="flex-1 py-1.5 rounded-lg text-xs font-semibold ${this.params.q < 0 ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-800'}">- Negative</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                },
+
+                getHUDHTML() {
+                    const radius = (Math.abs(this.params.v) / (Math.abs(this.params.B) + 0.01)).toFixed(1);
+                    return `
+                        <div>Cyclotron Radius R: <span class="text-purple-400 font-bold">${radius} m</span></div>
+                        <div>Velocity: <span class="text-green-500 font-bold">${this.params.v} m/s</span></div>
+                        <div>Field Magnitude: <span class="text-blue-500 font-bold">${Math.abs(this.params.B)} T</span></div>
+                    `;
+                },
+
+                getTheoryHTML() {
+                    return `
+                        <h3 class="font-bold text-base text-blue-500 mb-2">Lorentz Force & Cyclotron Motion</h3>
+                        <p class="mb-3">A charged particle moving in a magnetic field experiences a force perpendicular to both its velocity and the field.</p>
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg font-mono text-xs space-y-1 mb-4">
+                            <div>F_B = q · (v × B)</div>
+                            <div>F_centripetal = m·v² / r = q·v·B</div>
+                            <div>Cyclotron Radius R = (m · v) / (|q| · B)</div>
+                        </div>
+                    `;
+                }
+            },
+
+            // -------------------------------------------------------------
+            // 4. SIMPLE HARMONIC MOTION (SHM)
+            // -------------------------------------------------------------
+            shm: {
+                title: "Simple Harmonic Motion",
+                params: {
+                    mass: 2.0,      // kg
+                    k: 15.0,        // N/m
+                    amplitude: 120, // px
+                    damping: 0.02   // friction damping factor
+                },
+                x: 120,
+                v: 0,
+                time: 0,
+                history: [],
+
+                init() {
+                    this.x = this.params.amplitude;
+                    this.v = 0;
+                    this.time = 0;
+                    this.history = [];
+                },
+
+                update(dt) {
+                    // Differential Equation: m*a + b*v + k*x = 0  =>  a = (-k*x - b*v) / m
+                    const a = (-this.params.k * this.x - this.params.damping * 20 * this.v) / this.params.mass;
+                    this.v += a * dt;
+                    this.x += this.v * dt;
+                    this.time += dt;
+
+                    // Collect data for dynamic plotting
+                    if (this.history.length > 200) this.history.shift();
+                    this.history.push({ time: this.time, x: this.x, v: this.v });
+                },
+
+                render(ctx, w, h) {
+                    const cx = w / 2;
+                    const cy = h / 2;
+
+                    // Spring Wall
+                    ctx.fillStyle = state.theme === 'dark' ? '#334155' : '#cbd5e1';
+                    ctx.fillRect(cx - 220, cy - 60, 20, 120);
+
+                    // Spring Coils Drawing
+                    const springStartX = cx - 200;
+                    const blockX = cx + this.x;
+                    const coils = 16;
+                    const springLen = blockX - springStartX;
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = state.theme === 'dark' ? '#94a3b8' : '#475569';
+                    ctx.lineWidth = 3;
+                    ctx.moveTo(springStartX, cy);
+
+                    for (let i = 0; i <= coils; i++) {
+                        const px = springStartX + (springLen / coils) * i;
+                        const py = cy + (i % 2 === 0 ? -15 : 15);
+                        ctx.lineTo(px, py);
+                    }
+                    ctx.stroke();
+
+                    // Mass Block
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.shadowColor = '#3b82f6';
+                    ctx.shadowBlur = 12;
+                    ctx.fillRect(blockX - 25, cy - 25, 50, 50);
+                    ctx.shadowBlur = 0;
+
+                    // Draw Force & Velocity Vectors
+                    if (state.visuals.vectors) {
+                        // Velocity Vector (Green)
+                        drawArrow(ctx, blockX, cy, blockX + this.v * 0.8, cy, '#22c55e', 3, 'v');
+                        // Restoring Force Vector (Red)
+                        const Force = -this.params.k * this.x;
+                        drawArrow(ctx, blockX, cy - 35, blockX + Force * 0.2, cy - 35, '#ef4444', 3, 'F_restoring');
+                    }
+                },
+
+                getControlsHTML() {
+                    return `
+                        <div class="space-y-4">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-500"></i><span>Spring System Settings</span>
+                            </h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Mass (m)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.mass} kg</span>
+                                </div>
+                                <input type="range" min="0.5" max="10" step="0.5" value="${this.params.mass}" oninput="labModules.shm.params.mass = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Spring Constant (k)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.k} N/m</span>
+                                </div>
+                                <input type="range" min="2" max="50" step="1" value="${this.params.k}" oninput="labModules.shm.params.k = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Damping Coefficient</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.damping}</span>
+                                </div>
+                                <input type="range" min="0" max="0.1" step="0.005" value="${this.params.damping}" oninput="labModules.shm.params.damping = +this.value; updateControlsUI();" class="w-full">
+                            </div>
+                            <button onclick="toggleGraphPanel(true)" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md transition">
+                                <i class="fa-solid fa-chart-line mr-1"></i> Open Dynamic Plot Panel
+                            </button>
+                        </div>
+                    `;
+                },
+
+                getHUDHTML() {
+                    const omega = Math.sqrt(this.params.k / this.params.mass);
+                    const period = (2 * Math.PI / omega).toFixed(2);
+                    const ke = (0.5 * this.params.mass * (this.v / 10)**2).toFixed(2);
+                    const pe = (0.5 * this.params.k * (this.x / 100)**2).toFixed(2);
+                    return `
+                        <div>Displacement (x): <span class="text-blue-500 font-bold">${(this.x/10).toFixed(1)} cm</span></div>
+                        <div>Oscillation Period T: <span class="text-indigo-400 font-bold">${period} s</span></div>
+                        <div>Kinetic Energy (Ke): <span class="text-green-500 font-bold">${ke} J</span></div>
+                        <div>Potential Energy (Pe): <span class="text-amber-500 font-bold">${pe} J</span></div>
+                    `;
+                },
+
+                getTheoryHTML() {
+                    return `
+                        <h3 class="font-bold text-base text-blue-500 mb-2">Simple Harmonic Oscillator Dynamics</h3>
+                        <p class="mb-3">SHM occurs when the restoring force is directly proportional to the displacement from equilibrium.</p>
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg font-mono text-xs space-y-1 mb-4">
+                            <div>F = -k · x</div>
+                            <div>Angular Frequency ω = √(k / m)</div>
+                            <div>Period T = 2π / ω = 2π · √(m / k)</div>
+                            <div>Total Energy E = ½k A² = Ke + Pe</div>
+                        </div>
+                    `;
+                }
+            },
+
+            // -------------------------------------------------------------
+            // 5. UNIVERSAL GRAVITATION & ORBITS
+            // -------------------------------------------------------------
+            gravity: {
+                title: "Universal Gravitation & Orbits",
+                params: {
+                    centralMass: 10000,
+                    vLaunch: 7.5,
+                    eccentricity: 0
+                },
+                pos: { x: 0, y: -160 },
+                vel: { x: 7.5, y: 0 },
+                trail: [],
+
+                init() {
+                    this.pos = { x: 0, y: -160 };
+                    this.vel = { x: this.params.vLaunch, y: 0 };
+                    this.trail = [];
+                },
+
+                update(dt) {
+                    const r = Math.hypot(this.pos.x, this.pos.y);
+                    if (r < 25) return; // Collision with star
+
+                    // Gravitational force acceleration: a = G*M / r^2
+                    const G = 10;
+                    const aMag = (G * this.params.centralMass) / (r * r);
+                    const ax = -aMag * (this.pos.x / r);
+                    const ay = -aMag * (this.pos.y / r);
+
+                    this.vel.x += ax * dt;
+                    this.vel.y += ay * dt;
+
+                    this.pos.x += this.vel.x * dt;
+                    this.pos.y += this.vel.y * dt;
+
+                    if (state.visuals.trail && Math.random() > 0.2) {
+                        this.trail.push({ ...this.pos });
+                        if (this.trail.length > 400) this.trail.shift();
+                    }
+                },
+
+                render(ctx, w, h) {
+                    const cx = w / 2;
+                    const cy = h / 2;
+
+                    // Central Sun/Star
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.shadowColor = '#f59e0b';
+                    ctx.shadowBlur = 25;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Orbit Trail Line
+                    if (this.trail.length > 1) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+                        ctx.lineWidth = 2;
+                        ctx.moveTo(cx + this.trail[0].x, cy + this.trail[0].y);
+                        for (let i = 1; i < this.trail.length; i++) {
+                            ctx.lineTo(cx + this.trail[i].x, cy + this.trail[i].y);
+                        }
+                        ctx.stroke();
+                    }
+
+                    // Orbiting Body (Planet)
+                    const px = cx + this.pos.x;
+                    const py = cy + this.pos.y;
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Vectors
+                    if (state.visuals.vectors) {
+                        // Velocity (Green)
+                        drawArrow(ctx, px, py, px + this.vel.x * 6, py + this.vel.y * 6, '#22c55e', 2.5, 'v');
+
+                        // Gravitational Attract Force Vector (Amber)
+                        const r = Math.hypot(this.pos.x, this.pos.y);
+                        drawArrow(ctx, px, py, px - (this.pos.x/r)*35, py - (this.pos.y/r)*35, '#f59e0b', 2.5, 'F_g');
+                    }
+                },
+
+                getControlsHTML() {
+                    return `
+                        <div class="space-y-4">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-500"></i><span>Orbital Parameters</span>
+                            </h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Central Star Mass (M)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.centralMass}</span>
+                                </div>
+                                <input type="range" min="3000" max="25000" step="1000" value="${this.params.centralMass}" oninput="labModules.gravity.params.centralMass = +this.value; labModules.gravity.init(); updateControlsUI();" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-500">Orbital Launch Speed (v₀)</span>
+                                    <span class="mono-text font-bold text-blue-500">${this.params.vLaunch} km/s</span>
+                                </div>
+                                <input type="range" min="3" max="12" step="0.2" value="${this.params.vLaunch}" oninput="labModules.gravity.params.vLaunch = +this.value; labModules.gravity.init(); updateControlsUI();" class="w-full">
+                            </div>
+                        </div>
+                    `;
+                },
+
+                getHUDHTML() {
+                    const r = Math.hypot(this.pos.x, this.pos.y).toFixed(1);
+                    const speed = Math.hypot(this.vel.x, this.vel.y).toFixed(2);
+                    return `
+                        <div>Distance from Star (r): <span class="text-blue-500 font-bold">${r} AU</span></div>
+                        <div>Orbital Velocity: <span class="text-green-500 font-bold">${speed} km/s</span></div>
+                    `;
+                },
+
+                getTheoryHTML() {
+                    return `
+                        <h3 class="font-bold text-base text-blue-500 mb-2">Newton's Universal Gravitation & Kepler's Laws</h3>
+                        <p class="mb-3">Every mass attracts every other mass with a force proportional to the product of their masses and inversely proportional to the square of the distance between them.</p>
+                        <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg font-mono text-xs space-y-1 mb-4">
+                            <div>F_g = G · (M_star · m_planet) / r²</div>
+                            <div>Circular Velocity v = √(G·M / r)</div>
+                            <div>Kepler's 3rd Law: T² ∝ a³</div>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        // Helper: Canvas Arrow Renderer
+        function drawArrow(ctx, fromx, fromy, tox, toy, color, width = 2, label = '') {
+            const headlen = 9;
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+
+            // Line
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.stroke();
+
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            // Label
+            if (label) {
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillText(label, tox + Math.cos(angle)*10, toy + Math.sin(angle)*10);
+            }
+            ctx.restore();
+        }
+
+        function switchTab(tabId) {
+            if (!labModules[tabId]) return;
+            state.activeTab = tabId;
+
+            // Update Header Tab UI
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-600', 'dark:text-slate-300', 'hover:bg-slate-200', 'dark:hover:bg-slate-700');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'dark:text-slate-300', 'hover:bg-slate-200', 'dark:hover:bg-slate-700');
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            }
+
+            document.getElementById('mobile-tab-select').value = tabId;
+
+            // Re-Initialize Current Module State securely without breaking event loops
+            labModules[tabId].init();
+            updateControlsUI();
+            updateTheoryContent();
+        }
+
+        function updateControlsUI() {
+            const container = document.getElementById('controls-container');
+            const currentMod = labModules[state.activeTab];
+            if (currentMod && currentMod.getControlsHTML) {
+                container.innerHTML = currentMod.getControlsHTML();
+            }
+        }
+
+        function updateHUD() {
+            const container = document.getElementById('hud-metrics');
+            const currentMod = labModules[state.activeTab];
+            if (currentMod && currentMod.getHUDHTML) {
+                container.innerHTML = currentMod.getHUDHTML();
+            }
+        }
+
+        function updateTheoryContent() {
+            const container = document.getElementById('theory-content');
+            const title = document.getElementById('theory-title');
+            const currentMod = labModules[state.activeTab];
+            if (currentMod) {
+                title.innerText = currentMod.title;
+                container.innerHTML = currentMod.getTheoryHTML();
+            }
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            const icon = document.getElementById('theme-icon');
+            if (state.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                icon.className = 'fa-solid fa-moon text-lg';
+            } else {
+                document.documentElement.classList.remove('dark');
+                icon.className = 'fa-solid fa-sun text-lg text-amber-500';
+            }
+        }
+
+        function togglePlayPause() {
+            state.isRunning = !state.isRunning;
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            if (state.isRunning) {
+                icon.className = 'fa-solid fa-pause';
+                text.innerText = 'Pause';
+            } else {
+                icon.className = 'fa-solid fa-play';
+                text.innerText = 'Play';
+            }
+        }
+
+        function stepSimulation() {
+            state.isRunning = false;
+            document.getElementById('play-icon').className = 'fa-solid fa-play';
+            document.getElementById('play-text').innerText = 'Play';
+            labModules[state.activeTab].update(0.016 * state.simSpeed);
+            updateHUD();
+        }
+
+        function resetCurrentTab() {
+            labModules[state.activeTab].init();
+            updateHUD();
+        }
+
+        function updateSimSpeed(val) {
+            state.simSpeed = parseFloat(val);
+            document.getElementById('speed-val').innerText = `${state.simSpeed.toFixed(1)}x`;
+        }
+
+        function toggleVisualSetting(setting) {
+            state.visuals[setting] = !state.visuals[setting];
+            const btn = document.getElementById(`toggle-${setting}`);
+            if (state.visuals[setting]) {
+                btn.className = "px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-medium transition bg-blue-500 text-white";
+            } else {
+                btn.className = "px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 font-medium transition bg-slate-200 dark:bg-slate-800 text-slate-500";
+            }
+        }
+
+        function toggleTheoryDrawer() {
+            const drawer = document.getElementById('theory-drawer');
+            drawer.classList.toggle('translate-x-full');
+        }
+
+        function toggleGraphPanel(show) {
+            const panel = document.getElementById('graph-panel');
+            state.isGraphOpen = show;
+            if (show) {
+                panel.classList.remove('hidden');
+                initChart();
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        // Initialize Chart.js for SHM Plotting
+        function initChart() {
+            const ctx = document.getElementById('chart-canvas').getContext('2d');
+            if (state.chart) state.chart.destroy();
+
+            state.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Displacement (x)', data: [], borderColor: '#3b82f6', borderWidth: 2, pointRadius: 0 },
+                        { label: 'Velocity (v)', data: [], borderColor: '#22c55e', borderWidth: 2, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: { display: false },
+                        y: { grid: { color: state.theme === 'dark' ? '#334155' : '#e2e8f0' } }
+                    }
+                }
+            });
+        }
+
+        function drawBackgroundGrid(ctx, w, h) {
+            if (!state.visuals.grid) return;
+
+            ctx.strokeStyle = state.theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+
+            ctx.beginPath();
+            for (let x = 0; x < w; x += gridSize) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, h);
+            }
+            for (let y = 0; y < h; y += gridSize) {
+                ctx.moveTo(0, y); ctx.lineTo(w, y);
+            }
+            ctx.stroke();
+        }
+
+        function mainLoop(timestamp) {
+            // FPS Calculation
+            state.frameCount++;
+            if (timestamp - state.lastFpsUpdate >= 1000) {
+                state.fps = state.frameCount;
+                state.frameCount = 0;
+                state.lastFpsUpdate = timestamp;
+                document.getElementById('fps-counter').innerText = `${state.fps} FPS`;
+            }
+
+            const ctx = state.ctx;
+            const w = state.width;
+            const h = state.height;
+
+            // Clear Canvas Frame
+            ctx.clearRect(0, 0, w, h);
+
+            // Grid Background
+            drawBackgroundGrid(ctx, w, h);
+
+            // Active Module Execution
+            const currentMod = labModules[state.activeTab];
+            if (currentMod) {
+                if (state.isRunning) {
+                    currentMod.update(state.timeStep * state.simSpeed);
+                }
+                currentMod.render(ctx, w, h);
+                updateHUD();
+
+                // Live Chart Sync for SHM
+                if (state.isGraphOpen && state.chart && state.activeTab === 'shm' && currentMod.history) {
+                    const data = currentMod.history;
+                    state.chart.data.labels = data.map(d => d.time.toFixed(1));
+                    state.chart.data.datasets[0].data = data.map(d => d.x);
+                    state.chart.data.datasets[1].data = data.map(d => d.v);
+                    state.chart.update('none');
+                }
+            }
+
+            requestAnimationFrame(mainLoop);
+        }
+
+        // Window Resize & Event Bindings
+        window.addEventListener('resize', handleResize);
+        function handleResize() {
+            const canvas = state.canvas;
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            state.width = container.clientWidth;
+            state.height = container.clientHeight;
+            canvas.width = state.width;
+            canvas.height = state.height;
+        }
+
+        // Canvas Mouse Interaction Hooks
+        window.onload = function() {
+            state.canvas = document.getElementById('lab-canvas');
+            state.ctx = state.canvas.getContext('2d');
+            handleResize();
+
+            // Set Initial Dark Theme
+            document.documentElement.classList.add('dark');
+
+            // Attach Mouse Events for Interactive Dragging
+            state.canvas.addEventListener('mousedown', (e) => {
+                const mod = labModules[state.activeTab];
+                if (mod.handleMouseDown) mod.handleMouseDown(e, state.width, state.height);
+            });
+
+            state.canvas.addEventListener('mousemove', (e) => {
+                const mod = labModules[state.activeTab];
+                if (mod.handleMouseMove) mod.handleMouseMove(e, state.width, state.height);
+            });
+
+            window.addEventListener('mouseup', () => {
+                const mod = labModules[state.activeTab];
+                if (mod.handleMouseUp) mod.handleMouseUp();
+            });
+
+            // Initialize default module and kick off loop
+            switchTab('projectile');
+            requestAnimationFrame(mainLoop);
+        };
+    </script>
+</body>
+</html>

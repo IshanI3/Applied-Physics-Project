@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SGSITS Physics Virtual Lab</title>
+<style>
+:root{--bg:#f1f5fb;--card:#fff;--tx:#0f172a;--mut:#64748b;--bd:#dbe3f0;--ac:#4f46e5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1020;--card:#151c33;--tx:#e8edf8;--mut:#93a0bd;--bd:#27314f;--ac:#818cf8}}
+:root[data-theme="dark"]{--bg:#0b1020;--card:#151c33;--tx:#e8edf8;--mut:#93a0bd;--bd:#27314f;--ac:#818cf8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+.hero{background:linear-gradient(120deg,#4f46e5,#7c3aed 45%,#06b6d4);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}.brand span{font-size:38px}.hero h1{margin:0;font-size:clamp(20px,4vw,30px);letter-spacing:.3px}.hero p{margin:2px 0 0;opacity:.9;font-size:13px}
+button,select{font:inherit}.btn{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:8px 16px;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.32)}
+main{max-width:1180px;margin:0 auto;padding:22px 16px 40px}
+h2{margin:6px 0 4px}.sub{color:var(--mut);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;overflow:hidden;cursor:pointer;text-align:left;padding:0;color:inherit;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.card .top{height:86px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:#fff;font-size:40px;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.card .top i{font:700 14px system-ui;opacity:.85;font-style:normal}
+.card .bd{padding:14px 18px 18px}.card h3{margin:0 0 4px;font-size:17px}.card p{margin:0;color:var(--mut);font-size:13px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bar h2{flex:1;margin:0;min-width:180px}
+.b2{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;cursor:pointer}.b2:hover{border-color:var(--ac)}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+@media(max-width:860px){.lab{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+canvas{width:100%;aspect-ratio:900/460;display:block;border-radius:14px;border:1px solid var(--bd)}
+.panel h4{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)}
+.ctl{margin-bottom:12px;font-size:14px}.ctl label{display:flex;justify-content:space-between;margin-bottom:3px}.ctl b{color:var(--ac)}
+.ctl input[type=range]{width:100%;accent-color:var(--ac)}.ctl select{width:100%;padding:7px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+.ro{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ro div{background:var(--bg);border-radius:8px;padding:6px 9px;font-size:12px;color:var(--mut)}.ro b{display:block;color:var(--tx);font-size:14px}
+.info{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:860px){.info{grid-template-columns:1fr}}
+.fm div{font-family:Cambria,"Times New Roman",serif;font-size:16px;padding:5px 10px;margin:5px 0;border-left:4px solid var(--ac);background:var(--bg);border-radius:0 8px 8px 0}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:20px 0}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid var(--bd);padding:5px 8px;text-align:center;white-space:nowrap}th{background:var(--bg);color:var(--mut);font-weight:600}.hero{box-shadow:0 4px 18px rgba(79,70,229,.35)}canvas{box-shadow:0 8px 24px rgba(0,0,0,.25)}
+</style></head><body>
+<header class="hero"><div class="brand"><span>⚛️</span><div><h1>SGSITS Physics Virtual Lab</h1><p>Shri G. S. Institute of Technology &amp; Science, Indore · Department of Applied Physics</p></div></div>
+<button class="btn" id="th">🌙 Dark mode</button></header>
+<main>
+<section id="home"><h2>Experiments</h2><p class="sub">Select an experiment to start. Every simulation uses the real governing equations and updates live as you change the parameters.</p><div class="grid" id="grid"></div></section>
+<section id="lab" hidden>
+<div class="bar"><button class="b2" id="back">← All experiments</button><h2 id="ttl"></h2><button class="b2" id="pp">⏸ Pause</button><button class="b2" id="rs">↺ Restart</button><button class="b2" id="rec">📝 Record reading</button></div>
+<div class="lab"><div><canvas id="cv"></canvas></div>
+<div><div class="panel"><h4>Parameters</h4><div id="ctls"></div></div><div class="panel" style="margin-top:12px"><h4>Live readings</h4><div class="ro" id="ro"></div></div></div></div>
+<div class="info"><div class="panel"><h4>Theory</h4><div id="desc"></div></div><div class="panel"><h4>Formulae used</h4><div class="fm" id="fm"></div></div></div>
+<div class="panel" style="margin-top:16px"><h4>Observation table <button class="b2" id="clr" style="float:right;padding:3px 10px;font-size:12px">Clear</button></h4><div style="overflow-x:auto"><table id="obs"></table></div></div>
+</section></main>
+<footer>© SGSITS Physics Virtual Lab · Simulations are idealised models for learning.</footer>
+<script>
+const $=id=>document.getElementById(id),D=Math.PI/180,W=900,H=460,cv=$('cv'),X=cv.getContext('2d');
+const dpr=Math.min(window.devicePixelRatio||1,2);cv.width=W*dpr;cv.height=H*dpr;
+const f=(x,d=2)=>(+x).toFixed(d),sci=x=>(+x).toExponential(2);
+function L(g,a,b,c,d,col,w=2){g.strokeStyle=col;g.lineWidth=w;g.beginPath();g.moveTo(a,b);g.lineTo(c,d);g.stroke()}
+function T(g,s,x,y,c='#cbd5e1',z=13,al='left'){g.fillStyle=c;g.font=z+'px system-ui,sans-serif';g.textAlign=al;g.fillText(s,x,y)}
+function C(g,x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,7);g.fill()}
+function grid(g,x0,y0,x1,y1,n=10){g.strokeStyle='rgba(148,163,184,.13)';g.lineWidth=1;for(let i=0;i<=n;i++){let x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n;g.beginPath();g.moveTo(x,y0);g.lineTo(x,y1);g.moveTo(x0,y);g.lineTo(x1,y);g.stroke()}}
+const nf=v=>Math.abs(v)>=1e4||(Math.abs(v)<.01&&v!=0)?v.toExponential(1):''+(+v.toFixed(2));
+function gr(g,b,SS,xl,yl,dots){const[x0,y0,x1,y1]=b;let A=[],B=[];SS.forEach(q=>{A=A.concat(q[0]);B=B.concat(q[1])});const xm=Math.min(...A),xM=Math.max(...A),ym=Math.min(...B),yM=Math.max(...B),px=v=>x0+(v-xm)/((xM-xm)||1)*(x1-x0),py=v=>y1-6-(v-ym)/((yM-ym)||1)*(y1-y0-16);
+g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x0,y0,x1-x0,y1-y0);grid(g,x0,y0,x1,y1,4);L(g,x0,y1,x1,y1,'#e2e8f0',2);L(g,x0,y0,x0,y1,'#e2e8f0',2);
+SS.forEach(q=>{g.strokeStyle=q[2];g.lineWidth=2.5;g.beginPath();q[0].forEach((x,i)=>i?g.lineTo(px(x),py(q[1][i])):g.moveTo(px(x),py(q[1][i])));g.stroke()});
+(dots||[]).forEach(d=>C(g,px(d[0]),py(d[1]),6,d[2]));T(g,xl,(x0+x1)/2,y1+16,'#94a3b8',11,'center');T(g,yl,x0+5,y0+13,'#94a3b8',11);T(g,nf(ym),x0-4,y1,'#94a3b8',10,'right');T(g,nf(yM),x0-4,y0+10,'#94a3b8',10,'right');T(g,nf(xm),x0,y1+14,'#94a3b8',10);T(g,nf(xM),x1,y1+14,'#94a3b8',10,'right')}
+let OBS=[],LO=null,P={},S={},t=0,cur=null,paused=false,last=0,fr=0;
+
+const MAT=[['Copper',1.68e-8,.0039,'#f59e0b'],['Aluminium',2.65e-8,.0039,'#cbd5e1'],['Tungsten',5.6e-8,.0045,'#a78bfa'],['Constantan',4.9e-7,1e-5,'#fb923c'],['Nichrome',1.10e-6,.0004,'#f43f5e']];
+const GL=[['Crown glass',1.5046,.0042],['Flint glass',1.728,.01342],['Diamond',2.378,.007]];
+
+const E=[
+{n:'Projectile Motion',ic:'🎯',c:['#f97316','#ef4444'],d:'A body launched with speed v₀ at angle θ moves under constant gravity. Horizontal velocity is constant while vertical velocity changes uniformly, giving a parabolic path.',
+ f:['x = v₀cosθ · t','y = h + v₀sinθ · t − ½gt²','T = [v₀sinθ + √(v₀²sin²θ + 2gh)] / g','R = v₀cosθ · T ,  H = h + v₀²sin²θ / 2g'],
+ ctl:[['v','Launch speed',5,50,1,25,'m/s'],['a','Angle θ',5,85,1,45,'°'],['G','Gravity g',1.6,25,.1,9.8,'m/s²'],['h','Launch height',0,30,1,0,'m']],
+ draw(g,t){const{v,a,G,h}=P,r=a*D,vx=v*Math.cos(r),vy=v*Math.sin(r),Tf=(vy+Math.sqrt(vy*vy+2*G*h))/G,R=vx*Tf,Hm=h+vy*vy/(2*G),sc=Math.min(760/Math.max(R,1),300/Math.max(Hm,1)),ox=70,oy=420,tt=Math.min(t%(Tf+1.5),Tf);
+ grid(g,ox,oy-330,ox+780,oy,12);L(g,20,oy,880,oy,'#22c55e',3);g.fillStyle='#475569';g.fillRect(ox-40,oy-h*sc,40,h*sc);
+ const px=q=>ox+vx*q*sc,py=q=>oy-(h+vy*q-.5*G*q*q)*sc;
+ g.setLineDash([6,6]);g.strokeStyle='#64748b';g.lineWidth=1.5;g.beginPath();for(let i=0;i<=120;i++){const q=Tf*i/120;i?g.lineTo(px(q),py(q)):g.moveTo(px(q),py(q))}g.stroke();g.setLineDash([]);
+ g.strokeStyle='#fb923c';g.lineWidth=3;g.beginPath();for(let i=0;i<=120;i++){const q=tt*i/120;i?g.lineTo(px(q),py(q)):g.moveTo(px(q),py(q))}g.stroke();
+ const bx=px(tt),by=py(tt),vyc=vy-G*tt;L(g,bx,by,bx+vx*sc*.35,by,'#38bdf8',2);L(g,bx,by,bx,by-vyc*sc*.35,'#a3e635',2);L(g,bx,by,bx+vx*sc*.35,by-vyc*sc*.35,'#fde047',2);C(g,bx,by,9,'#f43f5e');
+ T(g,'vₓ',bx+vx*sc*.35+4,by-4,'#38bdf8');T(g,'v_y',bx+4,by-vyc*sc*.35,'#a3e635');
+ return[['Time of flight',f(Tf)+' s'],['Range R',f(R)+' m'],['Max height',f(Hm)+' m'],['Impact speed',f(Math.sqrt(vx*vx+(vy-G*Tf)**2))+' m/s'],['x(t)',f(vx*tt)+' m'],['y(t)',f(h+vy*tt-.5*G*tt*tt)+' m'],['vₓ',f(vx)+' m/s'],['v_y',f(vyc)+' m/s']]}},
+
+{n:'Optical Fibre – TIR',ic:'💡',c:['#06b6d4','#3b82f6'],d:'Light is guided in the core (n₁) by total internal reflection at the core–cladding boundary (n₂ < n₁). TIR occurs only if the angle of incidence on the wall exceeds the critical angle, i.e. the launch angle is within the acceptance cone.',
+ f:['sinθ₀ = n₁ sin θᵣ  (Snell at entry)','Angle on wall  i = 90° − θᵣ','sin θc = n₂ / n₁','NA = sinθₐ = √(n₁² − n₂²)'],
+ ctl:[['n1','Core index n₁',1.3,2,.01,1.5,''],['n2','Cladding index n₂',1,1.6,.01,1.45,''],['th','Launch angle θ₀',0,60,1,12,'°']],
+ draw(g,t){const{n1,n2,th}=P,d=45,cy=230,r=Math.asin(Math.sin(th*D)/n1),i=Math.PI/2-r,tir=n2<n1&&n1*Math.sin(i)>=n2,sl=Math.tan(r)||1e-6,xp=(t*260)%780;
+ g.fillStyle='rgba(59,130,246,.25)';g.fillRect(60,cy-d-35,780,2*d+70);g.fillStyle='rgba(56,189,248,.35)';g.fillRect(60,cy-d,780,2*d);
+ T(g,'Cladding n₂ = '+f(n2),70,cy-d-42,'#93c5fd');T(g,'Core n₁ = '+f(n1),70,cy+4,'#e0f2fe');
+ g.lineCap='round';L(g,60-110*Math.cos(th*D),cy+110*Math.sin(th*D),60,cy,'rgba(253,224,71,.6)',3);
+ g.strokeStyle='#fde047';g.lineWidth=3;g.shadowColor='#fde047';g.shadowBlur=10;g.beginPath();g.moveTo(60,cy);
+ if(tir){for(let x=0;x<=xp;x+=3){const m=(x*sl)%(4*d),o=m<d?m:m<3*d?2*d-m:m-4*d;g.lineTo(60+x,cy-o)}}
+ else{const x1=d/sl;for(let x=0;x<=Math.min(xp,x1);x+=3)g.lineTo(60+x,cy-x*sl);if(xp>x1){const r2=Math.asin(Math.min(1,n1*Math.sin(i)/n2)),dx=xp-x1;g.lineTo(60+x1+dx,cy-d-dx*Math.cos(r2)/Math.max(Math.sin(r2),.05))}}
+ g.stroke();g.shadowBlur=0;
+ const tc=n2<n1?Math.asin(n2/n1)/D:NaN,na=n1>n2?Math.sqrt(n1*n1-n2*n2):NaN;
+ T(g,tir?'✔ Total internal reflection – light guided':'✘ Light leaks into cladding',W/2,420,tir?'#4ade80':'#f87171',18,'center');
+ return[['Refraction θᵣ',f(r/D)+'°'],['Incidence on wall i',f(i/D)+'°'],['Critical angle θc',isNaN(tc)?'n/a':f(tc)+'°'],['Acceptance θₐ',isNaN(na)?'n/a':f(Math.asin(Math.min(1,na))/D)+'°'],['Numerical aperture',isNaN(na)?'n/a':f(na,3)],['Light speed in core',f(3e8/n1/1e8,3)+'×10⁸ m/s']]}},
+
+{n:'Simple Harmonic Motion',ic:'🌀',c:['#8b5cf6','#ec4899'],d:'A mass on a spring obeys Hooke’s law F = −kx. With optional viscous damping b the motion is a decaying cosine; with b = 0 it is pure SHM and total energy ½kA² stays constant.',
+ f:['ω = √(k/m) ,  T = 2π√(m/k)','x = A e^(−bt/2m) cos(ω_d t) ,  ω_d = √(k/m − (b/2m)²)','a = −(kx + bv)/m','E = ½mv² + ½kx²'],
+ ctl:[['m','Mass m',.1,3,.05,.5,'kg'],['k','Spring constant k',5,100,1,20,'N/m'],['A','Amplitude A',5,25,1,15,'cm'],['b','Damping b',0,2,.05,0,'kg/s']],
+ draw(g,t){const{m,k,A,b}=P,ga=b/(2*m),wd=Math.sqrt(Math.max(k/m-ga*ga,0)),Xf=q=>A*Math.exp(-ga*q)*Math.cos(wd*q),x=Xf(t),v=-A*Math.exp(-ga*t)*(ga*Math.cos(wd*t)+wd*Math.sin(wd*t));
+ grid(g,40,240,860,440,16);g.fillStyle='#475569';g.fillRect(30,80,14,120);L(g,20,200,880,200,'#64748b',2);
+ const bx=340+x*6;g.strokeStyle='#fbbf24';g.lineWidth=3;g.beginPath();g.moveTo(44,140);for(let i=1;i<=14;i++)g.lineTo(44+(bx-30-44)*i/15,140+(i%2?-16:16));g.lineTo(bx-30,140);g.stroke();
+ const gr=g.createLinearGradient(0,110,0,170);gr.addColorStop(0,'#a78bfa');gr.addColorStop(1,'#7c3aed');g.fillStyle=gr;g.fillRect(bx-30,110,60,60);T(g,'m',bx,147,'#fff',16,'center');
+ L(g,340,95,340,205,'rgba(255,255,255,.35)',1);T(g,'x = 0',340,88,'#94a3b8',12,'center');
+ const t0=Math.max(0,t-5),my=345,s=3.4;L(g,60,my,860,my,'#64748b',1);g.strokeStyle='#22d3ee';g.lineWidth=2.5;g.beginPath();
+ for(let i=0;i<=400;i++){const q=t0+5*i/400;if(q>t)break;const px=60+(q-t0)/5*800;i?g.lineTo(px,my-Xf(q)*s):g.moveTo(px,my-Xf(q)*s)}g.stroke();
+ T(g,'x–t graph (last 5 s)',64,258,'#94a3b8');
+ const xm=x/100,vm=v/100,KE=.5*m*vm*vm,PE=.5*k*xm*xm;
+ return[['Period T',f(2*Math.PI*Math.sqrt(m/k),3)+' s'],['Frequency f',f(Math.sqrt(k/m)/(2*Math.PI),3)+' Hz'],['ω₀',f(Math.sqrt(k/m))+' rad/s'],['x',f(x)+' cm'],['v',f(vm,3)+' m/s'],['a',f(-(k*xm+b*vm)/m,2)+' m/s²'],['KE',f(KE,4)+' J'],['PE',f(PE,4)+' J'],['Total E',f(KE+PE,4)+' J']]}},
+
+{n:'Simple Pendulum',ic:'🕰️',c:['#10b981','#14b8a6'],d:'For small angles the pendulum is SHM with T = 2π√(L/g). This simulation integrates the full non-linear equation θ″ = −(g/L) sinθ, so large amplitudes show the longer true period.',
+ f:['θ″ = −(g/L) sin θ','T₀ = 2π√(L/g)','T ≈ T₀(1 + θ₀²/16 + 11θ₀⁴/3072)','KE = ½m(Lθ′)² ,  PE = mgL(1 − cosθ)'],
+ ctl:[['L','Length L',.3,3,.05,1.5,'m'],['th','Amplitude θ₀',5,90,1,30,'°'],['G','Gravity g',1.6,25,.1,9.8,'m/s²']],
+ init(){S.th=P.th*D;S.w=0;S.h=[];S.pv=S.th;S.Tm=null;S.tz=null},
+ draw(g,t,dt){const{L:l,G}=P,n=20,hh=dt/n;for(let i=0;i<n;i++){S.w+=-G/l*Math.sin(S.th)*hh;S.th+=S.w*hh}
+ if(dt>0){if(S.pv<0&&S.th>=0){if(S.tz!==null)S.Tm=t-S.tz;S.tz=t}S.pv=S.th;S.h.push(S.th);if(S.h.length>300)S.h.shift()}
+ const th=S.th,px=260,py=40,sc=110,bx=px+l*sc*Math.sin(th),by=py+l*sc*Math.cos(th);
+ g.fillStyle='#475569';g.fillRect(px-60,py-10,120,10);L(g,px,py,bx,by,'#e2e8f0',3);C(g,bx,by,16,'#10b981');
+ g.strokeStyle='rgba(148,163,184,.4)';g.setLineDash([4,5]);g.beginPath();g.arc(px,py,l*sc,Math.PI/2-P.th*D,Math.PI/2+P.th*D);g.stroke();g.setLineDash([]);
+ g.fillStyle='rgba(0,0,0,.25)';g.fillRect(520,70,360,220);grid(g,520,70,880,290,8);L(g,520,180,880,180,'#64748b',1);T(g,'θ–t graph',526,86);
+ g.strokeStyle='#34d399';g.lineWidth=2.5;g.beginPath();S.h.forEach((q,i)=>{const x=520+i*360/300,y=180-q/(P.th*D)*95;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke();
+ const v=l*S.w,KE=.5*v*v,PE=G*l*(1-Math.cos(th)),Et=G*l*(1-Math.cos(P.th*D))||1;
+ T(g,'Energy (per kg)',520,325);g.fillStyle='#f472b6';g.fillRect(520,335,Math.min(1,KE/Et)*360,18);g.fillStyle='#38bdf8';g.fillRect(520,360,Math.min(1,PE/Et)*360,18);T(g,'KE',526,349,'#000',12);T(g,'PE',526,374,'#000',12);
+ const T0=2*Math.PI*Math.sqrt(l/G),a0=P.th*D;
+ return[['T₀ (small angle)',f(T0,3)+' s'],['T (corrected)',f(T0*(1+a0*a0/16+11*a0**4/3072),3)+' s'],['T measured',S.Tm?f(S.Tm,3)+' s':'…'],['θ',f(th/D)+'°'],['Speed v',f(Math.abs(v),3)+' m/s'],['KE / PE',f(KE,3)+' / '+f(PE,3)+' J']]}},
+
+{n:'Electromagnetic Induction',ic:'🧲',c:['#ef4444','#f59e0b'],d:'A bar magnet oscillating through a coil changes the magnetic flux linked with it. Faraday’s law gives the induced EMF; Lenz’s law says the induced current opposes the change that produced it.',
+ f:['Φ = B·A / (1 + (z/a)²)^(3/2)  (on-axis dipole model)','ε = −N dΦ/dt','z(t) = Z sin(2πft)','I = ε / R'],
+ ctl:[['N','Turns N',50,1000,10,300,''],['B','Magnet field B',20,500,10,150,'mT'],['f','Frequency',.2,3,.1,.8,'Hz'],['Z','Stroke Z',2,10,.5,6,'cm']],
+ init(){S.h=[];S.pk=1e-3},
+ draw(g,t,dt){const{N,B,f:fq,Z}=P,Ph=z=>B/1000*Math.PI*4e-4/Math.pow(1+(z/2)**2,1.5),zf=q=>Z*Math.sin(2*Math.PI*fq*q),z=zf(t),ph=Ph(z),emf=-N*(ph-Ph(zf(t-1e-4)))/1e-4;
+ if(dt>0){S.h.push([emf,ph]);if(S.h.length>450)S.h.shift()}S.pk=Math.max(S.pk,Math.abs(emf));
+ for(let k=-3;k<=3;k++){g.strokeStyle='#f59e0b';g.lineWidth=3;g.beginPath();g.ellipse(450+k*9,130,14,55,0,0,7);g.stroke()}
+ const mx=450+z*20;g.fillStyle='#ef4444';g.fillRect(mx-50,115,50,30);g.fillStyle='#3b82f6';g.fillRect(mx,115,50,30);T(g,'N',mx-25,137,'#fff',16,'center');T(g,'S',mx+25,137,'#fff',16,'center');
+ L(g,475,185,475,230,'#f59e0b',2);L(g,475,230,790,230,'#f59e0b',2);L(g,425,185,425,240,'#f59e0b',2);L(g,425,240,790,240,'#f59e0b',2);
+ g.fillStyle='#1e293b';g.beginPath();g.arc(790,200,48,Math.PI,0);g.fill();g.strokeStyle='#94a3b8';g.lineWidth=2;g.stroke();T(g,'G',790,222,'#e2e8f0',14,'center');
+ const ang=-Math.PI/2+emf/S.pk*1.0;L(g,790,200,790+40*Math.cos(ang),200+40*Math.sin(ang),'#fde047',3);
+ grid(g,60,290,860,430,16);L(g,60,360,860,360,'#64748b',1);T(g,'ε (yellow)  Φ (cyan)',64,304);
+ const pm=Ph(0);g.lineWidth=2.5;[[0,'#fde047',S.pk],[1,'#22d3ee',pm]].forEach(([j,c,m])=>{g.strokeStyle=c;g.beginPath();S.h.forEach((q,i)=>{const x=60+i*800/450,y=360-q[j]/m*65;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()});
+ return[['Flux Φ',sci(ph)+' Wb'],['EMF ε',f(emf,3)+' V'],['Peak EMF',f(S.pk,3)+' V'],['Current (R=10Ω)',f(emf/10*1000,1)+' mA'],['Magnet z',f(z)+' cm'],['Speed',f(Math.abs(2*Math.PI*fq*Z*Math.cos(2*Math.PI*fq*t))/100,3)+' m/s']]}},
+
+{n:'Doppler Effect',ic:'🔊',c:['#ec4899','#8b5cf6'],d:'When a source moves relative to an observer the received frequency changes: wavefronts bunch up ahead of the source (higher pitch) and spread out behind it (lower pitch). Observer A is ahead of the source, B is behind; both can move. Beyond Mach 1 the wavefronts pile into a shock-wave cone.',
+ f:['f′ = f₀ (v + v_o)/(v − v_s)   (A: ahead, observer approaching)','f′ = f₀ (v − v_o)/(v + v_s)   (B: behind, observer receding)','λ′ = (v ∓ v_s)/f₀ ,  v = 343 m/s','Mach number M = v_s/v ,  sin θ = 1/M  (M > 1)'],
+ ctl:[['vs','Source speed v_s',0,600,5,120,'m/s'],['vo','Observer speed v_o',0,100,5,0,'m/s'],['f0','Source frequency f₀',100,1000,10,440,'Hz']],
+ draw(g,t){const{vs,vo,f0}=P,v=343,c=W/4,u=vs/v*c,Tl=u>1?Math.min(3,640/u):3,tt=t%Tl,cy=170,x0=90,sup=vs>=v;
+ g.save();g.beginPath();g.rect(0,50,W,250);g.clip();grid(g,0,50,W,300,18);
+ for(let k=0;k*.3<=tt;k++){const te=k*.3,r=c*(tt-te);g.strokeStyle='hsla('+(330-k*12)%360+',90%,65%,.85)';g.lineWidth=2;g.beginPath();g.arc(x0+u*te,cy,r,0,7);g.stroke()}
+ const xs=x0+u*tt;if(sup){const al=Math.asin(v/vs);[-1,1].forEach(s=>L(g,xs,cy,xs-700*Math.cos(al),cy+s*700*Math.sin(al),'#fff',3))}
+ C(g,xs,cy,9,'#fde047');L(g,xs,cy,xs+28,cy,'#fde047',3);g.restore();
+ T(g,'Source',Math.min(xs,W-50),cy-18,'#fde047',13,'center');
+ [[840,'A (ahead)','#f472b6','right'],[50,'B (behind)','#38bdf8','left']].forEach(o=>{C(g,o[0],cy,9,o[2]);T(g,'Observer '+o[1],o[0]+(o[3]=='left'?-30:10),cy-18,o[2],13,o[3]);if(vo>0){L(g,o[0],cy+22,o[0]-vo/100*45,cy+22,o[2],3)}});
+ const fA=q=>f0*(v+vo)/(v-q),fB=q=>f0*(v-vo)/(v+q),xq=[],ya=[],yb=[];for(let q=0;q<=330;q+=10){xq.push(q);ya.push(fA(q));yb.push(fB(q))}
+ gr(g,[80,350,520,430],[[xq,ya,'#f472b6'],[xq,yb,'#38bdf8']],'source speed v_s (m/s)','f′ (Hz)',sup?[]:[[vs,fA(vs),'#f472b6'],[vs,fB(vs),'#38bdf8']]);
+ T(g,'■ A ahead',380,343,'#f472b6',12);T(g,'■ B behind',460,343,'#38bdf8',12);
+ if(!sup){[[fA(vs),375,'Received at A','#f472b6'],[fB(vs),418,'Received at B','#38bdf8']].forEach(o=>{T(g,o[2],570,o[1]-18,o[3],12);g.strokeStyle=o[3];g.lineWidth=2;g.beginPath();const wl=40*f0/o[0];for(let x=570;x<=860;x+=2){const y=o[1]-11*Math.sin(2*Math.PI*(x-570)/wl-t*6);x==570?g.moveTo(x,y):g.lineTo(x,y)}g.stroke()})}
+ else T(g,'Supersonic: shock-wave (Mach cone)',570,390,'#fff',14);
+ if(sup)return[['Regime','Supersonic'],['Mach number',f(vs/v,2)],['Mach angle θ',f(Math.asin(v/vs)/D,1)+'°'],['f′ formulas','not valid (M ≥ 1)']];
+ return[['f′ ahead (A)',f(fA(vs),1)+' Hz'],['f′ behind (B)',f(fB(vs),1)+' Hz'],['λ ahead',f((v-vs)/f0,3)+' m'],['λ behind',f((v+vs)/f0,3)+' m'],['Mach number',f(vs/v,3)],['Shift at A / B',f(fA(vs)-f0,1)+' / '+f(fB(vs)-f0,1)+' Hz']]}},
+
+{n:'I–V Characteristics of a Wire',ic:'⚡',c:['#eab308','#f97316'],d:'At constant temperature a metallic wire obeys Ohm’s law (straight I–V line). In reality the current heats the wire (Joule effect); its resistance rises with temperature, so the I–V curve bends. Compare the two modes, change material, size and cooling, and watch R–T and T–V graphs update live.',
+ f:['V = IR ,  R = ρL/A ,  A = πd²/4','ρ(T) = ρ₂₀[1 + α(T − 20)] ,  R(T) = R₂₀[1 + α(T − 20)]','Joule heating: P = V²/R(T) = h·πdL·(T − T_amb)','J = I/A ,  E = V/L ,  ρ = E/J'],
+ ctl:[['m','Material',MAT.map(q=>q[0]),2],['md','Mode',['Constant temperature (Ohmic)','Self-heating (Joule effect)'],1],['Lw','Length L',.2,5,.1,1,'m'],['dm','Diameter d',.05,2,.05,.1,'mm'],['Tc','Temperature / ambient',0,400,5,20,'°C'],['h','Cooling coeff. h',5,500,5,50,'W/m²K'],['Vm','Max voltage',1,50,1,6,'V']],
+ draw(g,t){const M=MAT[P.m],d=P.dm/1000,A=Math.PI*d*d/4,R20=M[1]*P.Lw/A,al=M[2],Rt=q=>Math.max(R20*(1+al*(q-20)),R20*.05),Gt=P.h*Math.PI*d*P.Lw,sh=P.md==1,Vm=P.Vm;
+ const sol=V=>{let q=P.Tc;if(sh)for(let i=0;i<80;i++)q+=.4*(Math.min(P.Tc+V*V/(Rt(q)*Gt),3400)-q);return q};
+ const V=(t%6)/6*Vm,Tn=sol(V),R=Rt(Tn),I=V/R,Vs=[],Is=[],Ts=[];for(let i=0;i<=50;i++){const q=Vm*i/50,tq=sol(q);Vs.push(q);Ts.push(tq);Is.push(q/Rt(tq))}
+ gr(g,[80,50,540,330],[[[0,Vm],[0,Vm/Rt(P.Tc)],'#64748b'],[Vs,Is,M[3]]],'Voltage V (V)  — grey: ideal Ohmic line','Current I (A)',[[V,I,'#f43f5e']]);
+ const Tm=Math.max(500,...Ts),Tr=[],Rr=[];for(let i=0;i<=30;i++){const q=Tm*i/30;Tr.push(q);Rr.push(Rt(q))}
+ gr(g,[610,50,860,165],[[Tr,Rr,'#fbbf24']],'Temperature (°C)','R (Ω)',[[Tn,R,'#f43f5e']]);
+ gr(g,[610,225,860,330],[[Vs,Ts,'#fb7185']],'Voltage V (V)','Wire temp T (°C)',[[V,Tn,'#f43f5e']]);
+ const hot=sh&&Tn>400,col=hot?'hsl('+Math.max(0,45-Tn/50)+',95%,'+Math.min(75,40+Tn/40)+'%)':M[3],th=Math.max(5,Math.min(18,P.dm*10));
+ g.shadowColor=col;g.shadowBlur=hot?18:0;g.fillStyle=col;g.fillRect(100,400-th/2,660,th);g.shadowBlur=0;
+ const sp=40+160*I/(Math.max(...Is)||1);for(let i=0;i<30;i++)C(g,100+((i*22+t*sp)%660),400+Math.sin(i*5)*th*.3,2,'#fff');
+ T(g,M[0]+' wire  (α = '+M[2]+' /°C)',780,438,'#e2e8f0',12,'right');if(sh&&Tn>=1500)T(g,'⚠ Overheating – wire would burn out',W/2,448,'#f87171',14,'center');
+ return[['Resistance R(T)',f(R,4)+' Ω'],['R₂₀ at 20 °C',f(R20,4)+' Ω'],['Current I',sci(I)+' A'],['Voltage V',f(V,2)+' V'],['Wire temp T',f(Tn,0)+' °C'],['Power P',sci(V*I)+' W'],['ρ(T)',sci(R*A/P.Lw)+' Ω·m'],['J = I/A',sci(I/A)+' A/m²'],['E = V/L',f(V/P.Lw,2)+' V/m'],['Slope dI/dV',sci(1/R)+' S']]}},
+
+{n:'Dispersion in a Prism',ic:'🌈',c:['#6366f1','#ec4899'],d:'Refractive index depends on wavelength (Cauchy: n = B + C/λ²), so violet bends more than red. White light is split into a spectrum; the deviation of each colour follows from Snell’s law at both faces.',
+ f:['n(λ) = B + C/λ²','sin i = n sin r₁ ,  r₁ + r₂ = A','n sin r₂ = sin e','δ = i + e − A ,  δ_min = 2 sin⁻¹(n sin A/2) − A','ω = (n_v − n_r)/(n_y − 1)'],
+ ctl:[['mt','Prism material',GL.map(q=>q[0]),0],['A','Apex angle A',30,75,1,60,'°'],['i','Incidence angle i',20,80,1,50,'°']],
+ draw(g){const M=GL[P.mt],nf=l=>M[1]+M[2]/l/l,A=P.A*D,hf=A/2,ap=[480,70],Hh=260,Lf=Hh/Math.cos(hf),dL=[-Math.sin(hf),Math.cos(hf)],dR=[Math.sin(hf),Math.cos(hf)],nIn=[Math.cos(hf),Math.sin(hf)],nL=[-nIn[0],-nIn[1]],nR=[Math.cos(hf),-Math.sin(hf)];
+ const rot=(v,a)=>[v[0]*Math.cos(a)-v[1]*Math.sin(a),v[0]*Math.sin(a)+v[1]*Math.cos(a)],cr=(a,b)=>a[0]*b[1]-a[1]*b[0];
+ const rf=(d,N,e)=>{const c=-(N[0]*d[0]+N[1]*d[1]),k=1-e*e*(1-c*c);if(k<0)return null;const s=e*c-Math.sqrt(k);return[e*d[0]+s*N[0],e*d[1]+s*N[1]]};
+ const din=rot(nIn,-P.i*D),P1=[ap[0]+dL[0]*Lf*.5,ap[1]+dL[1]*Lf*.5];
+ const tr=l=>{const n=nf(l),d1=rf(din,nL,1/n);if(!d1)return null;const q=[ap[0]-P1[0],ap[1]-P1[1]],den=cr(d1,dR),tt=cr(q,dR)/den,P2=[P1[0]+tt*d1[0],P1[1]+tt*d1[1]],d2=rf(d1,[-nR[0],-nR[1]],n);return{P2,d2,dev:d2?Math.abs(Math.atan2(cr(din,d2),din[0]*d2[0]+din[1]*d2[1]))/D:null}};
+ g.fillStyle='rgba(165,180,252,.2)';g.strokeStyle='#a5b4fc';g.lineWidth=2;g.beginPath();g.moveTo(...ap);g.lineTo(ap[0]+dL[0]*Lf,ap[1]+dL[1]*Lf);g.lineTo(ap[0]+dR[0]*Lf,ap[1]+dR[1]*Lf);g.closePath();g.fill();g.stroke();
+ L(g,P1[0]-din[0]*400,P1[1]-din[1]*400,P1[0],P1[1],'#fff',4);
+ g.globalCompositeOperation='lighter';g.lineWidth=3;let tirAny=false;
+ for(let l=.4;l<=.7001;l+=.0125){const r=tr(l);g.strokeStyle='hsl('+(270*(.7-l)/.3)+',100%,50%)';if(!r){tirAny=true;continue}g.beginPath();g.moveTo(...P1);g.lineTo(...r.P2);if(r.d2)g.lineTo(r.P2[0]+r.d2[0]*500,r.P2[1]+r.d2[1]*500);g.stroke()}
+ g.globalCompositeOperation='source-over';
+ T(g,'White light',20,40,'#fff',14);T(g,'Violet bends most · Red bends least',W-20,40,'#e2e8f0',13,'right');if(tirAny)T(g,'Some colours undergo TIR inside the prism',W/2,440,'#f87171',15,'center');
+ const r=tr(.7),v=tr(.4),y=nf(.589),dm=2*Math.asin(Math.min(1,y*Math.sin(hf)))/D-P.A,ok=r&&v&&r.dev!==null&&v.dev!==null;
+ return[['n red (700 nm)',f(nf(.7),4)],['n violet (400 nm)',f(nf(.4),4)],['δ red',ok?f(r.dev)+'°':'TIR'],['δ violet',ok?f(v.dev)+'°':'TIR'],['Angular dispersion',ok?f(v.dev-r.dev)+'°':'—'],['δ_min (yellow)',isNaN(dm)?'—':f(dm)+'°'],['Dispersive power ω',f((nf(.4)-nf(.7))/(y-1),4)]]}},
+
+{n:'Thermodynamics (Ideal Gas)',ic:'🔥',c:['#f43f5e','#fb923c'],d:'One of four reversible processes is carried out on n moles of a diatomic ideal gas (γ = 1.4). Watch molecules speed up with temperature and the state move along the P–V curve; the shaded area is the work done. First law: Q = ΔU + W.',
+ f:['PV = nRT','Isothermal: W = nRT ln(V₂/V₁)','Adiabatic: PV^γ = const ,  W = (P₁V₁ − P₂V₂)/(γ−1)','Isobaric: W = PΔV ;  Isochoric: W = 0','ΔU = nC_vΔT (C_v = 5R/2) ,  Q = ΔU + W'],
+ ctl:[['pr','Process',['Isothermal','Isobaric','Isochoric (ratio = T₂/T₁)','Adiabatic'],0],['n','Moles n',.5,3,.5,1,'mol'],['T1','Initial temperature',200,600,10,300,'K'],['r','Final ratio V₂/V₁',.4,2.5,.05,2,'']],
+ init(){S.p=Array.from({length:45},()=>({u:Math.random(),v:Math.random(),a:Math.random()*6.28}))},
+ draw(g,t,dt){const{pr,n,T1,r}=P,R=8.314,gm=1.4,Cv=2.5*R,P1=101325,V1=n*R*T1/P1,s=Math.min((t%7)/5.5,1);
+ const st=q=>{let V=V1,Pp=P1,Tt=T1;if(pr==0){V=V1*(1+(r-1)*q);Tt=T1;Pp=n*R*T1/V}else if(pr==1){V=V1*(1+(r-1)*q);Pp=P1;Tt=Pp*V/(n*R)}else if(pr==2){Tt=T1*(1+(r-1)*q);Pp=n*R*Tt/V1}else{V=V1*(1+(r-1)*q);Pp=P1*Math.pow(V1/V,gm);Tt=Pp*V/(n*R)}return{V,Pp,Tt}};
+ const a=st(s),cl=130*a.V/V1;
+ g.fillStyle='#334155';g.fillRect(36,60,6,230);g.fillRect(36,60,cl+30,6);g.fillRect(36,284,cl+30,6);
+ const hue=Math.max(0,230-(a.Tt-150)/450*230);g.fillStyle='hsla('+hue+',80%,50%,.18)';g.fillRect(42,66,cl,218);g.fillStyle='#94a3b8';g.fillRect(42+cl,50,16,250);L(g,58+cl,175,58+cl+60,175,'#94a3b8',6);
+ const sp=Math.sqrt(a.Tt/T1)*.55;S.p.forEach(p=>{p.a+=(Math.random()-.5)*.3;p.u+=Math.cos(p.a)*sp*dt*60/cl*1.2;p.v+=Math.sin(p.a)*sp*dt*60/200*1.2;if(p.u<0||p.u>1){p.a=Math.PI-p.a;p.u=Math.min(1,Math.max(0,p.u))}if(p.v<0||p.v>1){p.a=-p.a;p.v=Math.min(1,Math.max(0,p.v))}C(g,42+p.u*cl,66+p.v*218,4,'hsl('+hue+',95%,60%)')});
+ T(g,pr==2?'Fixed volume (heated)':'Piston moves →',42,330,'#cbd5e1',13);
+ const pts=[];for(let i=0;i<=80;i++)pts.push(st(i/80));const Vs=pts.map(q=>q.V*1e3),Ps=pts.map(q=>q.Pp/1e3),vmn=Math.min(...Vs),vmx=Math.max(...Vs),pmn=Math.min(...Ps),pmx=Math.max(...Ps);
+ const vx=Math.max(vmx-vmn,.1*vmx),py_=Math.max(pmx-pmn,.1*pmx),X0=500,X1=860,Y0=400,Y1=70,mx=v=>X0+30+(v-vmn+vx*.1)/(vx*1.2)*(X1-X0-40),my=p=>Y0-10-(p-pmn+py_*.1)/(py_*1.2)*(Y0-Y1-20);
+ grid(g,X0,Y1,X1,Y0,8);L(g,X0,Y0,X1,Y0,'#e2e8f0',2);L(g,X0,Y0,X0,Y1,'#e2e8f0',2);T(g,'V (L)',X1,Y0+18,'#e2e8f0',12,'right');T(g,'P (kPa)',X0+6,Y1-6,'#e2e8f0',12);
+ g.fillStyle='rgba(250,204,21,.22)';g.beginPath();g.moveTo(mx(Vs[0]),Y0);const k=Math.round(s*80);for(let i=0;i<=k;i++)g.lineTo(mx(Vs[i]),my(Ps[i]));g.lineTo(mx(Vs[k]),Y0);g.fill();
+ g.strokeStyle='#fb7185';g.lineWidth=3;g.beginPath();Vs.forEach((v,i)=>i?g.lineTo(mx(v),my(Ps[i])):g.moveTo(mx(v),my(Ps[i])));g.stroke();C(g,mx(a.V*1e3),my(a.Pp/1e3),8,'#fde047');
+ let W_;if(pr==0)W_=n*R*T1*Math.log(a.V/V1);else if(pr==1)W_=P1*(a.V-V1);else if(pr==2)W_=0;else W_=(P1*V1-a.Pp*a.V)/(gm-1);
+ const dU=n*Cv*(a.Tt-T1),Q=dU+W_;
+ return[['Pressure P',f(a.Pp/1e3,1)+' kPa'],['Volume V',f(a.V*1e3,2)+' L'],['Temperature T',f(a.Tt,1)+' K'],['Work W',f(W_,1)+' J'],['ΔU',f(dU,1)+' J'],['Heat Q',f(Q,1)+' J']]}}
+];
+
+// ---------- UI ----------
+function buildHome(){$('grid').innerHTML=E.map((e,i)=>`<button class="card" data-i="${i}" style="--c1:${e.c[0]};--c2:${e.c[1]}"><div class="top"><span>${e.ic}</span><i>EXP ${String(i+1).padStart(2,'0')}</i></div><div class="bd"><h3>${e.n}</h3><p>${e.d.split('. ')[0].slice(0,92)}…</p></div></button>`).join('')}
+function open(i){cur=E[i];OBS=[];P={};S={};t=0;paused=false;$('pp').textContent='⏸ Pause';$('home').hidden=true;$('lab').hidden=false;$('ttl').textContent=cur.ic+' '+cur.n;$('desc').textContent=cur.d;$('fm').innerHTML=cur.f.map(x=>'<div>'+x+'</div>').join('');
+ $('ctls').innerHTML=cur.ctl.map((c,j)=>{if(Array.isArray(c[2])){P[c[0]]=c[3];return`<div class="ctl"><label>${c[1]}</label><select data-j="${j}">${c[2].map((o,k)=>`<option value="${k}">${o}</option>`).join('')}</select></div>`}P[c[0]]=c[5];return`<div class="ctl"><label>${c[1]}<b id="v${j}">${c[5]} ${c[6]}</b></label><input type="range" data-j="${j}" min="${c[2]}" max="${c[3]}" step="${c[4]}" value="${c[5]}"></div>`}).join('');
+ $('ro').innerHTML='';renderObs();cur.init&&cur.init();window.scrollTo(0,0)}
+$('ctls').addEventListener('input',e=>{const j=+e.target.dataset.j,c=cur.ctl[j];P[c[0]]=+e.target.value;if(!Array.isArray(c[2]))$('v'+j).textContent=e.target.value+' '+c[6];S={};t=0;cur.init&&cur.init()});
+$('grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)open(+c.dataset.i)});
+$('back').onclick=()=>{cur=null;$('lab').hidden=true;$('home').hidden=false};
+$('pp').onclick=()=>{paused=!paused;$('pp').textContent=paused?'▶ Play':'⏸ Pause'};
+$('rs').onclick=()=>{S={};t=0;cur.init&&cur.init()};
+function setTheme(m){document.documentElement.dataset.theme=m;$('th').textContent=m=='dark'?'☀️ Light mode':'🌙 Dark mode';try{localStorage.setItem('sgsits-theme',m)}catch(e){}}
+let sv=null;try{sv=localStorage.getItem('sgsits-theme')}catch(e){}
+setTheme(sv||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+$('th').onclick=()=>setTheme(document.documentElement.dataset.theme=='dark'?'light':'dark');
+
+function loop(ts){requestAnimationFrame(loop);if(!cur)return;const dt=paused?0:Math.min((ts-last)/1000,.05);last=ts;t+=dt;
+ X.setTransform(dpr,0,0,dpr,0,0);const bg=X.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0a0f1f');bg.addColorStop(1,'#16203d');X.fillStyle=bg;X.fillRect(0,0,W,H);X.lineCap='butt';
+ let out;try{out=cur.draw(X,t,dt)}catch(e){out=[['Error',e.message]]}
+ if(out)LO=out;if(fr++%6==0&&out){$('ro').innerHTML=out.map(o=>`<div>${o[0]}<b>${o[1]}</b></div>`).join('')}}
+function renderObs(){$('obs').innerHTML=OBS.length&&LO?'<tr><th>#</th>'+LO.map(o=>'<th>'+o[0]+'</th>').join('')+'</tr>'+OBS.map((r,i)=>'<tr><td>'+(i+1)+'</td>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join(''):'<tr><td style="color:var(--mut)">Press “Record reading” to log the current values here.</td></tr>'}
+$('rec').onclick=()=>{if(LO){OBS.push(LO.map(o=>o[1]));if(OBS.length>15)OBS.shift();renderObs()}};$('clr').onclick=()=>{OBS=[];renderObs()};
+buildHome();requestAnimationFrame(ts=>{last=ts;loop(ts)});
+</script></body></html>
